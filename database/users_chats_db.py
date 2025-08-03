@@ -2,16 +2,24 @@ from pymongo import MongoClient
 from info import BOT_ID, ADMINS, DATABASE_NAME, DATA_DATABASE_URL, FILES_DATABASE_URL, SECOND_FILES_DATABASE_URL, IMDB_TEMPLATE, WELCOME_TEXT, LINK_MODE, TUTORIAL, SHORTLINK_URL, SHORTLINK_API, SHORTLINK, FILE_CAPTION, IMDB, WELCOME, SPELL_CHECK, PROTECT_CONTENT, AUTO_DELETE, IS_STREAM, VERIFY_EXPIRE
 import time
 from datetime import datetime
+import logging
 
-files_db_client = MongoClient(FILES_DATABASE_URL)
-files_db = files_db_client[DATABASE_NAME]
+logger = logging.getLogger(__name__)
 
-data_db_client = MongoClient(DATA_DATABASE_URL)
-data_db = data_db_client[DATABASE_NAME]
+# Add connection pooling and timeout settings
+try:
+    files_db_client = MongoClient(FILES_DATABASE_URL, maxPoolSize=10, serverSelectionTimeoutMS=5000, connectTimeoutMS=5000)
+    files_db = files_db_client[DATABASE_NAME]
 
-if SECOND_FILES_DATABASE_URL:
-     second_files_db_client = MongoClient(SECOND_FILES_DATABASE_URL)
-     second_files_db = second_files_db_client[DATABASE_NAME]
+    data_db_client = MongoClient(DATA_DATABASE_URL, maxPoolSize=10, serverSelectionTimeoutMS=5000, connectTimeoutMS=5000)
+    data_db = data_db_client[DATABASE_NAME]
+
+    if SECOND_FILES_DATABASE_URL:
+         second_files_db_client = MongoClient(SECOND_FILES_DATABASE_URL, maxPoolSize=10, serverSelectionTimeoutMS=5000, connectTimeoutMS=5000)
+         second_files_db = second_files_db_client[DATABASE_NAME]
+except Exception as e:
+    logger.error(f"Database connection error: {e}")
+    raise
 
 class Database:
     default_setgs = {

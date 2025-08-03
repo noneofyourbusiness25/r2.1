@@ -9,6 +9,9 @@ from datetime import datetime
 from database.users_chats_db import db
 from shortzy import Shortzy
 import requests, pytz
+import logging
+
+logger = logging.getLogger(__name__)
 
 imdb = Cinemagoer() 
 
@@ -27,6 +30,22 @@ class temp(object):
     GROUPS_CANCEL = False
     BOT = None
     PREMIUM = {}
+    
+    @classmethod
+    def cleanup_files(cls, max_files=100):
+        """Cleanup old files from memory to prevent memory leaks"""
+        if len(cls.FILES) > max_files:
+            # Keep only the most recent files
+            keys_to_remove = list(cls.FILES.keys())[:-max_files]
+            for key in keys_to_remove:
+                cls.FILES.pop(key, None)
+            logger.info(f"Cleaned up {len(keys_to_remove)} old file entries from memory")
+    
+    @classmethod
+    def add_file(cls, key, files):
+        """Add files with automatic cleanup"""
+        cls.FILES[key] = files
+        cls.cleanup_files()
 
 async def is_subscribed(bot, query):
     btn = []
@@ -193,22 +212,28 @@ async def is_premium(user_id, bot):
 
 async def check_premium(bot):
     while True:
-        pr = [i for i in db.get_premium_users() if i['status']['premium']]
-        for p in pr:
-            mp = p['status']
-            if mp['expire'] < datetime.now():
-                try:
-                    await bot.send_message(
-                        p['id'],
-                        f"Your premium {mp['plan']} plan is expired in {mp['expire'].strftime('%Y.%m.%d %H:%M:%S')}, use /plan to activate new plan again"
-                    )
-                except Exception:
-                    pass
-                mp['expire'] = ''
-                mp['plan'] = ''
-                mp['premium'] = False
-                db.update_plan(p['id'], mp)
-        await asyncio.sleep(1200)
+        try:
+            pr = [i for i in db.get_premium_users() if i['status']['premium']]
+            for p in pr:
+                mp = p['status']
+                if mp['expire'] < datetime.now():
+                    try:
+                        await bot.send_message(
+                            p['id'],
+                            f"Your premium {mp['plan']} plan is expired in {mp['expire'].strftime('%Y.%m.%d %H:%M:%S')}, use /plan to activate new plan again"
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to send premium expiry message to {p['id']}: {e}")
+                    mp['expire'] = ''
+                    mp['plan'] = ''
+                    mp['premium'] = False
+                    db.update_plan(p['id'], mp)
+            # Reduced sleep time from 1200 to 300 seconds (5 minutes)
+            await asyncio.sleep(300)
+        except Exception as e:
+            logger.error(f"Error in check_premium: {e}")
+            # Shorter sleep on error to recover faster
+            await asyncio.sleep(60)
 
 
 async def broadcast_messages(user_id, message, pin):

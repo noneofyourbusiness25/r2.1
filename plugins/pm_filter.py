@@ -135,7 +135,7 @@ async def next_page(bot, query):
 
     if not files:
         return
-    temp.FILES[key] = files
+    temp.add_file(key, files)
     settings = await get_settings(query.message.chat.id)
     del_msg = f"\n\n<b>⚠️ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ ᴀꜰᴛᴇʀ <code>{get_readable_time(DELETE_TIME)}</code> ᴛᴏ ᴀᴠᴏɪᴅ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs</b>" if settings["auto_delete"] else ''
     files_link = ''
@@ -238,7 +238,7 @@ async def filter_languages_cb_handler(client: Client, query: CallbackQuery):
     if not files:
         await query.answer(f"sᴏʀʀʏ '{lang.title()}' ʟᴀɴɢᴜᴀɢᴇ ꜰɪʟᴇs ɴᴏᴛ ꜰᴏᴜɴᴅ 😕", show_alert=1)
         return
-    temp.FILES[key] = files
+    temp.add_file(key, files)
     settings = await get_settings(query.message.chat.id)
     del_msg = f"\n\n<b>⚠️ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ ᴀꜰᴛᴇʀ <code>{get_readable_time(DELETE_TIME)}</code> ᴛᴏ ᴀᴠᴏɪᴅ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs</b>" if settings["auto_delete"] else ''
     files_link = ''
@@ -291,7 +291,7 @@ async def lang_next_page(bot, query):
     files, n_offset, total = await get_search_results(search, offset=l_offset, lang=lang)
     if not files:
         return
-    temp.FILES[key] = files
+    temp.add_file(key, files)
     try:
         n_offset = int(n_offset)
     except:
@@ -356,7 +356,7 @@ async def quality_search(client: Client, query: CallbackQuery):
     if not files:
         await query.answer(f"sᴏʀʀʏ '{qual.title()}' ʟᴀɴɢᴜᴀɢᴇ ꜰɪʟᴇs ɴᴏᴛ ꜰᴏᴜɴᴅ 😕", show_alert=1)
         return
-    temp.FILES[key] = files
+    temp.add_file(key, files)
     settings = await get_settings(query.message.chat.id)
     del_msg = f"\n\n<b>⚠️ ᴛʜɪs ᴍᴇssᴀɢᴇ ᴡɪʟʟ ʙᴇ ᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ ᴀꜰᴛᴇʀ <code>{get_readable_time(DELETE_TIME)}</code> ᴛᴏ ᴀᴠᴏɪᴅ ᴄᴏᴘʏʀɪɢʜᴛ ɪssᴜᴇs</b>" if settings["auto_delete"] else ''
     files_link = ''
@@ -405,7 +405,7 @@ async def quality_next_page(bot, query):
     files, n_offset, total = await get_search_results(search, offset=l_offset, lang=qual)
     if not files:
         return
-    temp.FILES[key] = files
+    temp.add_file(key, files)
     try:
         n_offset = int(n_offset)
     except:
@@ -1087,7 +1087,7 @@ async def auto_filter(client, msg, s, spoll=False):
         search, files, offset, total_results = spoll
     req = message.from_user.id if message and message.from_user else 0
     key = f"{message.chat.id}-{message.id}"
-    temp.FILES[key] = files
+    temp.add_file(key, files)
     BUTTONS[key] = search
     files_link = ""
     if settings['links']:

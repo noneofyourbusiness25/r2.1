@@ -64,6 +64,9 @@ class Bot(Client):
         # Start premium check task with error handling
         asyncio.create_task(check_premium(self))
         
+        # Start periodic cleanup task to prevent memory leaks
+        asyncio.create_task(periodic_cleanup())
+        
         try:
             await self.send_message(chat_id=LOG_CHANNEL, text=f"<b>{me.mention} Restarted! 🤖</b>")
         except Exception as e:
@@ -108,6 +111,17 @@ class Bot(Client):
             for message in messages:
                 yield message
                 current += 1
+
+async def periodic_cleanup():
+    """Periodic cleanup task to prevent memory leaks"""
+    while True:
+        try:
+            # Cleanup temp.FILES every 10 minutes
+            temp.cleanup_files()
+            await asyncio.sleep(600)  # 10 minutes
+        except Exception as e:
+            logger.error(f"Error in periodic cleanup: {e}")
+            await asyncio.sleep(60)  # Wait 1 minute before retrying
 
 app = Bot()
 app.run()

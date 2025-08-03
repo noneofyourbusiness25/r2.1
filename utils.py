@@ -30,6 +30,22 @@ class temp(object):
     GROUPS_CANCEL = False
     BOT = None
     PREMIUM = {}
+    
+    @classmethod
+    def cleanup_files(cls, max_files=100):
+        """Cleanup old files from memory to prevent memory leaks"""
+        if len(cls.FILES) > max_files:
+            # Keep only the most recent files
+            keys_to_remove = list(cls.FILES.keys())[:-max_files]
+            for key in keys_to_remove:
+                cls.FILES.pop(key, None)
+            logger.info(f"Cleaned up {len(keys_to_remove)} old file entries from memory")
+    
+    @classmethod
+    def add_file(cls, key, files):
+        """Add files with automatic cleanup"""
+        cls.FILES[key] = files
+        cls.cleanup_files()
 
 async def is_subscribed(bot, query):
     btn = []

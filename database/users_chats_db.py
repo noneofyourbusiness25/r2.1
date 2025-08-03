@@ -179,13 +179,17 @@ class Database:
         user = self.col.find_one({'id':int(user_id)})
         if user:
             info = user.get('verify_status', self.default_verify)
-            try:
-                info.get('expire_time')
-            except:
-                expire_time = info.get('verified_time') + datetime.timedelta(seconds=VERIFY_EXPIRE)
-                info.append({
-                    'expire_time': expire_time
-                })
+            # Fix the expire_time logic
+            if info.get('expire_time') == 0 or info.get('expire_time') is None:
+                # If no expire_time is set, create one based on verified_time
+                if info.get('verified_time') != 0:
+                    from datetime import datetime, timedelta
+                    expire_time = info.get('verified_time') + timedelta(seconds=VERIFY_EXPIRE)
+                    info['expire_time'] = expire_time
+                else:
+                    # If no verified_time, set expire_time to past (not verified)
+                    from datetime import datetime
+                    info['expire_time'] = datetime.now()
             return info
         return self.default_verify
         

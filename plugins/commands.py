@@ -13,6 +13,9 @@ from database.users_chats_db import db
 from datetime import datetime, timedelta
 from info import IS_PREMIUM, PRE_DAY_AMOUNT, RECEIPT_SEND_USERNAME, URL, BIN_CHANNEL, SECOND_FILES_DATABASE_URL, STICKERS, INDEX_CHANNELS, ADMINS, IS_VERIFY, VERIFY_TUTORIAL, VERIFY_EXPIRE, SHORTLINK_API, SHORTLINK_URL, DELETE_TIME, SUPPORT_LINK, UPDATES_LINK, LOG_CHANNEL, PICS, IS_STREAM, REACTIONS, PM_FILE_DELETE_TIME
 from utils import is_premium, upload_image, get_settings, get_size, is_subscribed, is_check_admin, get_shortlink, get_verify_status, update_verify_status, save_group_settings, temp, get_readable_time, get_wish, get_seconds
+import logging
+
+logger = logging.getLogger(__name__)
 
 async def del_stk(s):
     # Reduced sleep time from 3 to 1 second
@@ -49,8 +52,20 @@ async def start(client, message):
         await client.send_message(LOG_CHANNEL, script.NEW_USER_TXT.format(message.from_user.mention, message.from_user.id))
 
     verify_status = await get_verify_status(message.from_user.id)
-    if verify_status['is_verified'] and datetime.datetime.now() > verify_status['expire_time']:
-        await update_verify_status(message.from_user.id, is_verified=False)
+    logger.info(f"Verification check for user {message.from_user.id}: IS_VERIFY={IS_VERIFY}, is_verified={verify_status['is_verified']}, is_premium={await is_premium(message.from_user.id, client)}")
+    
+    if IS_VERIFY and not verify_status['is_verified'] and not await is_premium(message.from_user.id, client):
+        token = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+        await update_verify_status(message.from_user.id, verify_token=token, link="" if mc == 'inline_verify' else mc)
+        link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API, f'https://t.me/{temp.U_NAME}?start=verify_{token}')
+        logger.info(f"Created verification link: {link}")
+        btn = [[
+            InlineKeyboardButton("🧿 Verify 🧿", url=link)
+        ],[
+            InlineKeyboardButton('🗳 Tutorial 🗳', url=VERIFY_TUTORIAL)
+        ]]
+        await message.reply("You not verified today! Kindly verify now. 🔐", reply_markup=InlineKeyboardMarkup(btn), protect_content=True)
+        return
 
 
     if (len(message.command) != 2) or (len(message.command) == 2 and message.command[1] == 'start'):
@@ -121,6 +136,7 @@ async def start(client, message):
         token = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
         await update_verify_status(message.from_user.id, verify_token=token, link="" if mc == 'inline_verify' else mc)
         link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API, f'https://t.me/{temp.U_NAME}?start=verify_{token}')
+        logger.info(f"Created verification link: {link}")
         btn = [[
             InlineKeyboardButton("🧿 Verify 🧿", url=link)
         ],[
@@ -203,8 +219,12 @@ async def start(client, message):
         return await message.reply('No Such File Exist!')
     files = files_
     settings = await get_settings(int(grp_id))
+    logger.info(f"Shortlink check: settings['shortlink']={settings.get('shortlink')}, is_premium={await is_premium(message.from_user.id, client)}")
+    
     if type_ != 'shortlink' and settings['shortlink'] and not await is_premium(message.from_user.id, client):
+        logger.info(f"Creating shortlink for file: {file_id}")
         link = await get_shortlink(settings['url'], settings['api'], f"https://t.me/{temp.U_NAME}?start=shortlink_{grp_id}_{file_id}")
+        logger.info(f"Shortlink created: {link}")
         btn = [[
             InlineKeyboardButton("♻️ Get File ♻️", url=link)
         ],[

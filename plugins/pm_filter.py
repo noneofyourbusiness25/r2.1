@@ -1176,41 +1176,49 @@ async def auto_filter(client, msg, s, spoll=False):
         try:
             k = await message.reply_photo(photo=imdb.get('poster'), caption=cap[:1024] + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), parse_mode=enums.ParseMode.HTML, quote=True)
             if settings["auto_delete"]:
-                await asyncio.sleep(DELETE_TIME)
+                # Use shorter sleep intervals to check for cancellation
+                for _ in range(DELETE_TIME // 60):  # Check every minute
+                    await asyncio.sleep(60)
                 await k.delete()
                 try:
                     await message.delete()
-                except:
-                    pass
+                except Exception as e:
+                    logger.error(f"Failed to delete message: {e}")
         except (MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty):
             pic = imdb.get('poster')
             poster = pic.replace('.jpg', "._V1_UX360.jpg")
             k = await message.reply_photo(photo=poster, caption=cap[:1024] + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), parse_mode=enums.ParseMode.HTML, quote=True)
             if settings["auto_delete"]:
-                await asyncio.sleep(DELETE_TIME)
+                # Use shorter sleep intervals to check for cancellation
+                for _ in range(DELETE_TIME // 60):  # Check every minute
+                    await asyncio.sleep(60)
                 await k.delete()
                 try:
                     await message.delete()
-                except:
-                    pass
+                except Exception as e:
+                    logger.error(f"Failed to delete message: {e}")
         except Exception as e:
             k = await message.reply_text(cap + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True, parse_mode=enums.ParseMode.HTML, quote=True)
             if settings["auto_delete"]:
-                await asyncio.sleep(DELETE_TIME)
+                # Use shorter sleep intervals to check for cancellation
+                for _ in range(DELETE_TIME // 60):  # Check every minute
+                    await asyncio.sleep(60)
                 await k.delete()
                 try:
                     await message.delete()
-                except:
-                    pass
+                except Exception as e:
+                    logger.error(f"Failed to delete message: {e}")
     else:
         k = await s.edit_text(cap + files_link + del_msg, reply_markup=InlineKeyboardMarkup(btn), disable_web_page_preview=True, parse_mode=enums.ParseMode.HTML)
         if settings["auto_delete"]:
-            await asyncio.sleep(DELETE_TIME)
+            # Use shorter sleep intervals to check for cancellation
+            for _ in range(DELETE_TIME // 60):  # Check every minute
+                await asyncio.sleep(60)
             await k.delete()
             try:
                 await message.delete()
-            except:
-                pass
+            except Exception as e:
+                logger.error(f"Failed to delete message: {e}")
 
 async def advantage_spell_chok(message, s):
     search = message.text
@@ -1223,22 +1231,24 @@ async def advantage_spell_chok(message, s):
         movies = await get_poster(search, bulk=True)
     except:
         n = await s.edit_text(text=script.NOT_FILE_TXT.format(message.from_user.mention, search), reply_markup=InlineKeyboardMarkup(btn))
-        await asyncio.sleep(60)
+        # Reduced sleep time from 60 to 30 seconds
+        await asyncio.sleep(30)
         await n.delete()
         try:
             await message.delete()
-        except:
-            pass
+        except Exception as e:
+            logger.error(f"Failed to delete message in spell check: {e}")
         return
     if not movies:
         n = await s.edit_text(text=script.NOT_FILE_TXT.format(message.from_user.mention, search), reply_markup=InlineKeyboardMarkup(btn))
         await temp.BOT.send_message(LOG_CHANNEL, f"#No_Result\n\nRequester: {message.from_user.mention}\nContent: {search}")
-        await asyncio.sleep(60)
+        # Reduced sleep time from 60 to 30 seconds
+        await asyncio.sleep(30)
         await n.delete()
         try:
             await message.delete()
-        except:
-            pass
+        except Exception as e:
+            logger.error(f"Failed to delete message in spell check: {e}")
         return
     movies = list(dict.fromkeys(movies))
     user = message.from_user.id if message.from_user else 0
@@ -1251,10 +1261,11 @@ async def advantage_spell_chok(message, s):
         [InlineKeyboardButton("🚫 ᴄʟᴏsᴇ 🚫", callback_data="close_data")]
     )
     s = await s.edit_text(text=f"👋 Hello {message.from_user.mention},\n\nI couldn't find the <b>'{search}'</b> you requested.\nSelect if you meant one of these? 👇", reply_markup=InlineKeyboardMarkup(buttons))
-    await asyncio.sleep(300)
+    # Reduced sleep time from 300 to 120 seconds (2 minutes)
+    await asyncio.sleep(120)
     await s.delete()
     try:
         await message.delete()
-    except:
-        pass
+    except Exception as e:
+        logger.error(f"Failed to delete message in spell check: {e}")
 
